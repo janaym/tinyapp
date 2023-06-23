@@ -61,6 +61,12 @@ app.get('/urls/:id',  (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+//redirect /u/:id paths to their respective long id
+app.get('/u/:id', (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
+
 //handle new short url request
 app.post('/urls', (req, res) => {
   //create id: longURL pair
@@ -73,11 +79,13 @@ app.post('/urls', (req, res) => {
   res.redirect(`urls/${id}`);
 });
 
-//redirect /u/:id paths to their respective long id
-app.get('/u/:id', (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+
+  res.redirect('/urls');
 });
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
