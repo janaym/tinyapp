@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
-//set up ejs 
+//set up ejs
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 
@@ -19,11 +19,11 @@ const urlDatabase = {
  */
 const generateRandomString = () => {
   // declare all alphanumeric characters
-  const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   
   let result = Array(6);
   //populate array with random characters
-  for(let i = 0; i < 6; i++) {
+  for (let i = 0; i < 6; i++) {
     result[i] = characters.charAt(Math.floor(Math.random() * characters.length));
   }
 
@@ -49,16 +49,16 @@ app.get('/urls', (req, res) => {
 //page to create a new short url id
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
-})
+});
 
 
 //access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
   //get specified id
-  const id = req.params.id
+  const id = req.params.id;
   const templateVars = { id, longURL: urlDatabase[id] };
 
-  res.render('urls_show', templateVars)
+  res.render('urls_show', templateVars);
 });
 
 //handle new short url request
@@ -70,16 +70,16 @@ app.post('/urls', (req, res) => {
   //store in database
   urlDatabase[id] = longURL;
   
-  res.redirect(`urls/${id}`)
-})
+  res.redirect(`urls/${id}`);
+});
 
 //redirect /u/:id paths to their respective long id
 app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
-})
+});
 
 app.listen(PORT, () => {
-console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Example app listening on port ${PORT}!`);
 });
 
