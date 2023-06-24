@@ -79,6 +79,7 @@ app.post('/urls', (req, res) => {
   res.redirect(`urls/${id}`);
 });
 
+//handle delete form submissions
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
@@ -86,6 +87,12 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 });
 
+//handle longurl update forms
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  urlDatabase[id] = req.body.newLongURL;
+  res.redirect('/urls')
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
