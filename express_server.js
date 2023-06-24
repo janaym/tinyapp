@@ -94,6 +94,14 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls')
 });
 
+//handle post to /login
+app.post('/login', (req, res) => {
+  const input = req.body.username;
+  console.log(input)
+  res.cookie("username", input);
+  res.redirect("/urls")
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
