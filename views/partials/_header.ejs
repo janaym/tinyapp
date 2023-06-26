@@ -17,12 +17,14 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-      <div class="navbar-dark">
-        <form method="post" action="/login">
-          <input type="text" name="username" placeholder="username">
-          <button type="submit">Login</button>
-        </form>
-      </div>
+    </div>
+    <div class="navbar-dark" >
+      <form class="input-group" method="post" action="/login">
+        <input class="form-control" type="text" name="username" placeholder="username">
+        <span class="input-group-btn">
+          <button class="btn btn-outline-light" type="button">Login</button>
+     </span>
+      </form>
     </div>
   </nav>
 </header>
