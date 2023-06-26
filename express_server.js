@@ -1,17 +1,29 @@
 //setup server
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
+let username = "none";
 
 //set up ejs
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 //database we will be using
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+// Checks if login cookie is present. Returns username if so.
+const checkLoginStatus = (req) => {
+  if (req.cookies) {
+    return req.cookies.username;
+  }
+  return;
+};
+
 
 
 /**
@@ -42,21 +54,39 @@ app.get('/urls.json', (req, res) => {
 
 //show index of current urls in database
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+
+  let templateVars = {urls: urlDatabase};
+  
+  //check to see if logged in
+  if (req.cookies) {
+    templateVars.username = req.cookies['username'];
+  }
+
   res.render("urls_index", templateVars);
 });
 
 //page to create a new short url id
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = {};
+
+  //check to see if logged in
+  if (req.cookies) {
+    templateVars.username = req.cookies['username'];
+  }
+  console.log(templateVars);
+  res.render("urls_new", templateVars);
 });
 
 
 //access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
-  //get specified id
   const id = req.params.id;
-  const templateVars = { id, longURL: urlDatabase[id] };
+  let templateVars = { id, longURL: urlDatabase[id] };
+
+  //check to see if logged in
+  if (req.cookies) {
+    templateVars.username = req.cookies['username'];
+  }
 
   res.render('urls_show', templateVars);
 });
@@ -91,15 +121,21 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   urlDatabase[id] = req.body.newLongURL;
-  res.redirect('/urls')
+  res.redirect('/urls');
 });
 
 //handle post to /login
 app.post('/login', (req, res) => {
   const input = req.body.username;
-  console.log(input)
   res.cookie("username", input);
-  res.redirect("/urls")
+  
+  res.redirect("/urls");
+});
+
+//handle post to /logout
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
