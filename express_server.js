@@ -54,7 +54,6 @@ app.get('/urls.json', (req, res) => {
 
 //show index of current urls in database
 app.get('/urls', (req, res) => {
-
   let templateVars = {urls: urlDatabase};
   
   //check to see if logged in
