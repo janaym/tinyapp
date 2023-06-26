@@ -26,8 +26,8 @@
         <h5 class="card-title">Edit URL:</h5>
         <form method ="POST" action="/urls/<%= id %>">
           <label for="newLongURL">new URL:</label>
-          <input type="text" id="newLongURL" name="newLongURL" value="http://www."><br>
-          <button type="submit">Update</button>
+          <input type="text" id="newLongURL" name="newLongURL" placeholder="http://"><br>
+          <button class="btn btn-outline-primary" type="submit">Update</button>
         </form>
       </div>
       <div class = "card-footer text-muted"><a href="http://localhost:8080/urls/new">Shorten a URL here!</a></div>
