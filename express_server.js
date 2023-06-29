@@ -43,7 +43,7 @@ const getUserByEmail = (email) => {
 //takes in user id, returns user associated with id, or undefined if no such user exits
 const getUserById = (id) => {
   return users[id];
-}
+};
 
 //returns a randomly generated 6-character alphanumeric string
 const generateRandomString = () => {
@@ -189,7 +189,7 @@ app.post('/login', (req, res) => {
     res.statusCode = 403;
     res.send("Error: Incorrect Password");
   } else {
-    //all good. 
+    //all good.
     //set user id cookie and redirect to urls
     res.cookie('user_id', user.id);
     res.redirect("/urls");
