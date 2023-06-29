@@ -197,7 +197,7 @@ app.post('/login', (req, res) => {
 //handle logout request
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 //handle register form submission
