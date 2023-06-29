@@ -3,7 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
-let username = "none";
+
 
 //set up ejs
 app.set("view engine", "ejs");
@@ -17,15 +17,15 @@ const urlDatabase = {
 };
 
 //database of users
-const users = {}
+const users = {};
 
 const getUserByEmail = (email) => {
-  for (id in users) {
+  for (const id in users) {
     if (users[id].email === email) {
       return users[id];
     }
   }
-}
+};
 
 /**
  * @returns a six character long random alphanumeric string
@@ -87,8 +87,8 @@ app.get('/urls/:id',  (req, res) => {
   const currentUser = users[currentUserID];
 
   const id = req.params.id;
-  let templateVars = { 
-    id, 
+  let templateVars = {
+    id,
     longURL: urlDatabase[id],
     user: currentUser
   };
@@ -101,14 +101,14 @@ app.get('/register', (req, res) => {
   const currentUserID = req.cookies['user_id'];
   const currentUser = users[currentUserID];
 
-  const templateVars = {user: currentUser}; 
+  const templateVars = {user: currentUser};
   res.render('register', templateVars);
-})
+});
 
 app.get('/login', (req, res) => {
   const currentUser = users[req.cookies['user_id']];
   const templateVars = { user: currentUser };
-  res.render('login', templateVars )
+  res.render('login', templateVars);
 });
 
 //redirect /u/:id paths to their respective long id
@@ -150,14 +150,14 @@ app.post('/login', (req, res) => {
   const password = req.body.passowrd;
   const user = getUserByEmail(email);
 
-  if(!user) {
+  if (!user) {
     res.statusCode = 403;
     res.send("Error: User email not found");
   } else if (password !== user.password) {
     res.statusCode = 403;
     res.send("Error: Incorrect Password");
   } else {
-    res.cookie('user_id', user.id)
+    res.cookie('user_id', user.id);
   }
   
   res.redirect("/urls");
@@ -174,13 +174,13 @@ app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  if(email === '' || password === '') {
+  if (email === '' || password === '') {
     res.statusCode = 400;
-    res.send("Error: either email or password field are empty")
-  } else if(getUserByEmail(email)) {
+    res.send("Error: either email or password field are empty");
+  } else if (getUserByEmail(email)) {
     res.statusCode = 400;
-    res.send("Error: this email is already registered")
-  } else {  
+    res.send("Error: this email is already registered");
+  } else {
 
     const id = generateRandomString();
 
@@ -195,7 +195,7 @@ app.post('/register', (req, res) => {
   }
 
 
-})
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
