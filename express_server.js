@@ -178,9 +178,10 @@ app.post('/urls/:id', (req, res) => {
 //handle login form submissions
 app.post('/login', (req, res) => {
   const email = req.body.email;
-  const password = req.body.passowrd;
+  const password = req.body.password;
   const user = getUserByEmail(email);
 
+  //check email/password valid
   if (!user) {
     res.statusCode = 403;
     res.send("Error: User email not found");
@@ -188,6 +189,7 @@ app.post('/login', (req, res) => {
     res.statusCode = 403;
     res.send("Error: Incorrect Password");
   } else {
+    //all good. 
     //set user id cookie and redirect to urls
     res.cookie('user_id', user.id);
     res.redirect("/urls");
