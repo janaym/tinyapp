@@ -61,9 +61,6 @@ const generateRandomString = () => {
 
 /*----------------------------------------------*/
 
-
-
-
 // //set homepage to say hello
 // app.get("/", (req, res) => {
 //   res.send("Hello");
@@ -96,10 +93,13 @@ app.get("/urls/new", (req, res) => {
 
   const currentUser = getUserById(req.cookies['user_id']);
 
-  let templateVars = { user: currentUser };
-
-  console.log(templateVars);
-  res.render("urls_new", templateVars);
+  if (!currentUser) {
+    res.redirect('/login');
+  } else {
+    let templateVars = { user: currentUser };
+    res.render("urls_new", templateVars);
+  }
+  
 });
 
 
@@ -120,25 +120,43 @@ app.get('/urls/:id',  (req, res) => {
 
 //page to register an account for tinyURL
 app.get('/register', (req, res) => {
-
   const currentUser = getUserById(req.cookies['user_id']);
-  const templateVars = {user: currentUser};
 
+  if(currentUser) {
+    res.redirect('/urls');
+    res.end()
+  }
+
+  const templateVars = {user: currentUser};
   res.render('register', templateVars);
+  
+
 });
 
 //page to login to tinyURL account
 app.get('/login', (req, res) => {
+  const currentUser = getUserById(req.cookies['user_id'])
 
-  const currentUser = users[req.cookies['user_id']];
+  if (currentUser) {
+    res.redirect('/urls');
+    res.end();
+  }
+
   const templateVars = { user: currentUser };
-
   res.render('login', templateVars);
+  
 });
 
 //redirect /u/:id paths to their respective long id
 app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
+
+  //check longURL exists in database
+  if(!longURL) {
+    res.send(`<h3>error</h3>
+  <p>This tinyURL does not exist</p>`)
+    res.end();
+  }
   res.redirect(longURL);
 });
 
@@ -149,6 +167,13 @@ app.get('/u/:id', (req, res) => {
 
 //handle new short url request
 app.post('/urls', (req, res) => {
+  //check if logged in
+  if (!getUserById(req.cookies['user_id'])) {
+    res.send(`<h3>error</h3>
+  <p>You must be logged in to create a new tinyUrl</p>`)
+    res.end();
+  }
+
   //create id: longURL pair
   const longURL = req.body.longURL;
   const id = generateRandomString();
