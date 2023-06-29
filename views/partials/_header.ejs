@@ -16,21 +16,17 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <a class="nav-tiem nav-link" href="/register">Register</a>
       </div>
     </div>
-    <% if (!username) { %>
+    <% if (!user) { %>
       <div class="navbar-dark" >
-        <form class="input-group" method="post" action="/login">
-          <input class="form-control" type="text" name="username" placeholder="username">
-          <span class="input-group-btn">
-            <button class="btn btn-outline-light" type="button">Login</button>
-          </span>
-        </form>
+        <button class ="btn btn-outline-light" onclick="window.location ='http://localhost:8080/login';">Login</button>
       </div>
-    <% } else{ %>
+    <% } else { %>
       <form class = "form-inline" method="post" action="/logout">
-        <label for="logout" class="text-light">Logged in as: <%= username %> </label>
-        <button type="submit" class="btn btn-outline-light" name="logout" type="'button">Logout</button>
+        <label for="logout" class="text-light">Logged in as: <%= user.email %> </label>
+        <button type="submit" class="btn btn-outline-light" name="logout">Logout</button>
       </form>
 
     <% } %>

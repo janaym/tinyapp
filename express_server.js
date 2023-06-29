@@ -16,15 +16,16 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-// Checks if login cookie is present. Returns username if so.
-const checkLoginStatus = (req) => {
-  if (req.cookies) {
-    return req.cookies.username;
+//database of users
+const users = {}
+
+const getUserByEmail = (email) => {
+  for (id in users) {
+    if (users[id].email === email) {
+      return users[id];
+    }
   }
-  return;
-};
-
-
+}
 
 /**
  * @returns a six character long random alphanumeric string
@@ -54,24 +55,27 @@ app.get('/urls.json', (req, res) => {
 
 //show index of current urls in database
 app.get('/urls', (req, res) => {
-  let templateVars = {urls: urlDatabase};
+
+  const currentUserID = req.cookies['user_id'];
+  const currentUser = users[currentUserID];
+  let templateVars = {
+    user: currentUser,
+    urls: urlDatabase,
+  };
   
-  //check to see if logged in
-  if (req.cookies) {
-    templateVars.username = req.cookies['username'];
-  }
+
 
   res.render("urls_index", templateVars);
 });
 
 //page to create a new short url id
 app.get("/urls/new", (req, res) => {
-  let templateVars = {};
 
-  //check to see if logged in
-  if (req.cookies) {
-    templateVars.username = req.cookies['username'];
-  }
+  const currentUserID = req.cookies['user_id'];
+  const currentUser = users[currentUserID];
+
+  let templateVars = { user: currentUser };
+
   console.log(templateVars);
   res.render("urls_new", templateVars);
 });
@@ -79,21 +83,33 @@ app.get("/urls/new", (req, res) => {
 
 //access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
-  const id = req.params.id;
-  let templateVars = { id, longURL: urlDatabase[id] };
+  const currentUserID = req.cookies['user_id'];
+  const currentUser = users[currentUserID];
 
-  //check to see if logged in
-  if (req.cookies) {
-    templateVars.username = req.cookies['username'];
-  }
+  const id = req.params.id;
+  let templateVars = { 
+    id, 
+    longURL: urlDatabase[id],
+    user: currentUser
+  };
 
   res.render('urls_show', templateVars);
 });
 
 app.get('/register', (req, res) => {
-  const templateVars = {username: req.cookies['username']}; 
+
+  const currentUserID = req.cookies['user_id'];
+  const currentUser = users[currentUserID];
+
+  const templateVars = {user: currentUser}; 
   res.render('register', templateVars);
 })
+
+app.get('/login', (req, res) => {
+  const currentUser = users[req.cookies['user_id']];
+  const templateVars = { user: currentUser };
+  res.render('login', templateVars )
+});
 
 //redirect /u/:id paths to their respective long id
 app.get('/u/:id', (req, res) => {
@@ -130,17 +146,56 @@ app.post('/urls/:id', (req, res) => {
 
 //handle post to /login
 app.post('/login', (req, res) => {
-  const input = req.body.username;
-  res.cookie("username", input);
+  const email = req.body.email;
+  const password = req.body.passowrd;
+  const user = getUserByEmail(email);
+
+  if(!user) {
+    res.statusCode = 403;
+    res.send("Error: User email not found");
+  } else if (password !== user.password) {
+    res.statusCode = 403;
+    res.send("Error: Incorrect Password");
+  } else {
+    res.cookie('user_id', user.id)
+  }
   
   res.redirect("/urls");
 });
 
 //handle post to /logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect("/urls");
 });
+
+//handle post to /register
+app.post('/register', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if(email === '' || password === '') {
+    res.statusCode = 400;
+    res.send("Error: either email or password field are empty")
+  } else if(getUserByEmail(email)) {
+    res.statusCode = 400;
+    res.send("Error: this email is already registered")
+  } else {  
+
+    const id = generateRandomString();
+
+    users[id] = {
+      email,
+      password,
+      id
+    };
+  
+    res.cookie('user_id', id);
+    res.redirect("/urls");
+  }
+
+
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
