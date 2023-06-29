@@ -1,24 +1,37 @@
 //setup server
+/*----------------------------------------------*/
+
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
 
-
-//set up ejs
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-//database we will be using
+/*----------------------------------------------*/
+
+
+//data
+/*----------------------------------------------*/
+
+//tiny urls
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-//database of users
+//users
 const users = {};
 
+/*----------------------------------------------*/
+
+
+//helper functions
+/*----------------------------------------------*/
+
+//takes in email, returns user associated with email, or undefined if no such user exists
 const getUserByEmail = (email) => {
   for (const id in users) {
     if (users[id].email === email) {
@@ -27,9 +40,12 @@ const getUserByEmail = (email) => {
   }
 };
 
-/**
- * @returns a six character long random alphanumeric string
- */
+//takes in user id, returns user associated with id, or undefined if no such user exits
+const getUserById = (id) => {
+  return users[id];
+}
+
+//returns a randomly generated 6-character alphanumeric string
 const generateRandomString = () => {
   // declare all alphanumeric characters
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -43,36 +59,42 @@ const generateRandomString = () => {
   return result.join('');
 };
 
-//set homepage to say hello
-app.get("/", (req, res) => {
-  res.send("Hello");
-});
+/*----------------------------------------------*/
 
-//access url info in JSON format
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
 
-//show index of current urls in database
+
+
+// //set homepage to say hello
+// app.get("/", (req, res) => {
+//   res.send("Hello");
+// });
+
+// //access url info in JSON format
+// app.get('/urls.json', (req, res) => {
+//   res.json(urlDatabase);
+// });
+
+
+//Get Routes
+/*----------------------------------------------*/
+
+//pages shows index of current urls in database
 app.get('/urls', (req, res) => {
 
-  const currentUserID = req.cookies['user_id'];
-  const currentUser = users[currentUserID];
+  const currentUser = getUserById(req.cookies['user_id']);
+
   let templateVars = {
     user: currentUser,
     urls: urlDatabase,
   };
-  
-
 
   res.render("urls_index", templateVars);
 });
 
-//page to create a new short url id
+//page with form to create new tinyURL
 app.get("/urls/new", (req, res) => {
 
-  const currentUserID = req.cookies['user_id'];
-  const currentUser = users[currentUserID];
+  const currentUser = getUserById(req.cookies['user_id']);
 
   let templateVars = { user: currentUser };
 
@@ -81,12 +103,12 @@ app.get("/urls/new", (req, res) => {
 });
 
 
-//access the info for a specific short url id
+//page to access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
-  const currentUserID = req.cookies['user_id'];
-  const currentUser = users[currentUserID];
 
+  const currentUser = getUserById(req.cookies['user_id']);
   const id = req.params.id;
+
   let templateVars = {
     id,
     longURL: urlDatabase[id],
@@ -96,18 +118,21 @@ app.get('/urls/:id',  (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+//page to register an account for tinyURL
 app.get('/register', (req, res) => {
 
-  const currentUserID = req.cookies['user_id'];
-  const currentUser = users[currentUserID];
-
+  const currentUser = getUserById(req.cookies['user_id']);
   const templateVars = {user: currentUser};
+
   res.render('register', templateVars);
 });
 
+//page to login to tinyURL account
 app.get('/login', (req, res) => {
+
   const currentUser = users[req.cookies['user_id']];
   const templateVars = { user: currentUser };
+
   res.render('login', templateVars);
 });
 
@@ -116,6 +141,11 @@ app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
+
+/*----------------------------------------------*/
+
+//Post routes
+/*----------------------------------------------*/
 
 //handle new short url request
 app.post('/urls', (req, res) => {
@@ -129,7 +159,7 @@ app.post('/urls', (req, res) => {
   res.redirect(`urls/${id}`);
 });
 
-//handle delete form submissions
+//handle tinyURL delete form submissions
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
@@ -137,14 +167,15 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-//handle longurl update forms
+//handle longUrl update forms
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   urlDatabase[id] = req.body.newLongURL;
+
   res.redirect('/urls');
 });
 
-//handle post to /login
+//handle login form submissions
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.passowrd;
@@ -157,19 +188,19 @@ app.post('/login', (req, res) => {
     res.statusCode = 403;
     res.send("Error: Incorrect Password");
   } else {
+    //set user id cookie and redirect to urls
     res.cookie('user_id', user.id);
+    res.redirect("/urls");
   }
-  
-  res.redirect("/urls");
 });
 
-//handle post to /logout
+//handle logout request
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
   res.redirect("/urls");
 });
 
-//handle post to /register
+//handle register form submission
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -181,9 +212,9 @@ app.post('/register', (req, res) => {
     res.statusCode = 400;
     res.send("Error: this email is already registered");
   } else {
-
     const id = generateRandomString();
 
+    //update user database
     users[id] = {
       email,
       password,
@@ -193,9 +224,8 @@ app.post('/register', (req, res) => {
     res.cookie('user_id', id);
     res.redirect("/urls");
   }
-
-
 });
+/*----------------------------------------------*/
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
