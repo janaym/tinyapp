@@ -90,6 +90,11 @@ app.get('/urls/:id',  (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+app.get('/register', (req, res) => {
+  const templateVars = {username: req.cookies['username']}; 
+  res.render('register', templateVars);
+})
+
 //redirect /u/:id paths to their respective long id
 app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
