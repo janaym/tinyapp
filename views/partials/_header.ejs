@@ -25,10 +25,9 @@
       </div>
     <% } else { %>
       <form class = "form-inline" method="post" action="/logout">
-        <label for="logout" class="text-light">Logged in as: <%= user.email %> </label>
         <button type="submit" class="btn btn-outline-light" name="logout">Logout</button>
+        <label for="logout" class="text-light">Logged in as: <%= user.email %> </label>
       </form>
-
     <% } %>
    
   </nav>
