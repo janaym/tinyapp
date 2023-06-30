@@ -72,11 +72,11 @@ const urlsForUser = (id) => {
   for (const url in urlDatabase) {
 
     if (urlDatabase[url].userID === id) {
-      userUrls.userID = url;
+      userUrls[id] = urlDatabase[url];
     }
   }
 
-
+  
   return userUrls;
 }
 
@@ -112,7 +112,7 @@ app.get('/urls', (req, res) => {
     urls: urlsForUser(currentUser.userID)
   };
 
-  //console.log(templateVars.urls, "get user urls")
+  console.log(templateVars.urls, "get user urls")
   res.render("urls_index", templateVars);
 });
 
@@ -146,7 +146,7 @@ app.get('/urls/:id',  (req, res) => {
 
   const id = req.params.id;
   const longURL = urlDatabase[id].longURL
-  
+
   console.log(longURL)
   // if(currentUser.userID !== urlDatabase[id].userID) {
   //   res.send(`<h3>Error:</h3>
