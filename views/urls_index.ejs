@@ -20,28 +20,33 @@
     <%- include('partials/_header') %>
     <main style="margin: 1em;">
       <h3>My URLs</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th scope="col">Short URL ID</th>
-            <th scope="col">Long URL</th>
-            <th scope ='col'>Delete</th>
-            <th scope="col">Edit</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% for (let id in urls) { %>
+      <% if (Object.keys(urls).length === 0) { %>
+   
+        <p>You have no urls. Create one <a href="http://localhost:8080/urls/new">here</a></p>
+      <% } else { %>
+        <table class="table">
+          <thead>
             <tr>
-              <td><%= id %></td>
-              <td><%= urls[id] %></td>
-              <td><form method="POST" action="/urls/<%= id %>/delete">
-                <button type="submit" class="btn btn-outline-danger"> &#128465</button>
-              </form></td>
-              <td><button class="btn btn-outline-success" onclick="window.location.href='http://www.localhost:8080/urls/<%= id %>';">&#9998</button></td>
+              <th scope="col">Short URL ID</th>
+              <th scope="col">Long URL</th>
+              <th scope ='col'>Delete</th>
+              <th scope="col">Edit</th>
             </tr>
-          <% } %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% for (let id in urls) { %>
+              <tr>
+                <td><%= id %></td>
+                <td><%= urls[id].longURL %></td>
+                <td><form method="POST" action="/urls/<%= id %>/delete">
+                  <button type="submit" class="btn btn-outline-danger"> &#128465</button>
+                </form></td>
+              <td><button class="btn btn-outline-success" onclick="window.location.href='http://www.localhost:8080/urls/<%= id %>';">&#9998</button></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      <% } %>
       <div class = card-footer></div><a href="http://localhost:8080/urls/new">Shorten a URL here!</a>
     </main>
     <!-- Bootstrap JS -->
