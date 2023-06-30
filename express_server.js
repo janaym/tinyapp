@@ -68,14 +68,15 @@ const generateRandomString = () => {
 
 const urlsForUser = (id) => {
   let userUrls = {};
-  console.log(id)
+
   for (const url in urlDatabase) {
-    console.log(url, urlDatabase[url].userID, id)
+
     if (urlDatabase[url].userID === id) {
       userUrls.userID = url;
     }
   }
-  console.log(userUrls, "in user urls func")
+
+
   return userUrls;
 }
 
@@ -111,7 +112,7 @@ app.get('/urls', (req, res) => {
     urls: urlsForUser(currentUser.userID)
   };
 
-  console.log(templateVars.urls, "get user urls")
+  //console.log(templateVars.urls, "get user urls")
   res.render("urls_index", templateVars);
 });
 
@@ -144,7 +145,9 @@ app.get('/urls/:id',  (req, res) => {
   // }
 
   const id = req.params.id;
-
+  const longURL = urlDatabase[id].longURL
+  
+  console.log(longURL)
   // if(currentUser.userID !== urlDatabase[id].userID) {
   //   res.send(`<h3>Error:</h3>
   //   <p>You are not the owner of this url, so you cannot access it.</p>`);
@@ -153,6 +156,7 @@ app.get('/urls/:id',  (req, res) => {
 
   let templateVars = {
     id,
+    longURL,
     user: currentUser
   };
 
@@ -225,7 +229,7 @@ app.post('/urls', (req, res) => {
   urlDatabase[id] = {
     id, longURL,
     userID: currentUser.userID};
-  console.log(urlDatabase)
+  //console.log(urlDatabase)
   res.redirect(`urls/${id}`);
 });
 
@@ -289,7 +293,7 @@ app.post('/register', (req, res) => {
   }
 
   const userID = generateRandomString();
-  console.log(userID)
+  //console.log(userID)
 
   //update user database
   users[userID] = {
