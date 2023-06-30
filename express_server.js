@@ -17,17 +17,7 @@ app.use(cookieParser());
 /*----------------------------------------------*/
 
 //tiny urls
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
-
+const urlDatabase = {};
 
 //users
 const users = {};
@@ -66,13 +56,13 @@ const generateRandomString = () => {
   return result.join('');
 };
 
-const urlsForUser = (id) => {
+const urlsForUser = (userID) => {
   let userUrls = {};
 
-  for (const url in urlDatabase) {
+  for (const urlID in urlDatabase) {
 
-    if (urlDatabase[url].userID === id) {
-      userUrls[id] = urlDatabase[url];
+    if (urlDatabase[urlID].userID === userID) {
+      userUrls[urlID] = urlDatabase[urlID];
     }
   }
 
@@ -104,16 +94,16 @@ app.get('/urls', (req, res) => {
   if (!currentUser) { 
     res.send(`<h3>Error:</h3>
     <p>you must be logged in to see this page. Login <a href='http://localhost:8080/login'>here</a></p>`);
-    res.end()
+  } else {
+    let templateVars = {
+      user: currentUser,
+      urls: urlsForUser(currentUser.userID)
+    };
+    // console.log(templateVars.urls, "get user urls")
+    res.render("urls_index", templateVars);
   }
 
-  let templateVars = {
-    user: currentUser,
-    urls: urlsForUser(currentUser.userID)
-  };
 
-  console.log(templateVars.urls, "get user urls")
-  res.render("urls_index", templateVars);
 });
 
 //page with form to create new tinyURL
@@ -134,33 +124,34 @@ app.get("/urls/new", (req, res) => {
 
 //page to access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
-
+  
   const currentUser = getUserById(req.cookies['user_id']);
   console.log(currentUser)
 
-  // if (!currentUser) { 
-  //   res.send(`<h3>Error:</h3>
-  //   <p>you must be logged in to see this page. Login <a href='http://localhost:8080/login'>here</a></p>`);
-  //   res.end()
-  // }
-
+  //not a problem when coming from the new url creator
+  //is  not a problem when coming from the edit button or from redirect link in /urls:id page
+  //is a problem when accessign directly (due to www.?)
   const id = req.params.id;
-  const longURL = urlDatabase[id].longURL
 
-  console.log(longURL)
-  // if(currentUser.userID !== urlDatabase[id].userID) {
-  //   res.send(`<h3>Error:</h3>
-  //   <p>You are not the owner of this url, so you cannot access it.</p>`);
-  //   res.end()
-  // }
-
-  let templateVars = {
-    id,
-    longURL,
-    user: currentUser
-  };
-
-  res.render('urls_show', templateVars);
+  if (!currentUser) { 
+    res.send(`<h3>Error:</h3>
+    <p>you must be logged in to see this page. Login <a href='/login'>here</a></p>`);
+  } else  if (currentUser.userID !== urlDatabase[id].userID) {
+    res.send(`<h3>Error:</h3>
+    <p>You are not the owner of this url, so you cannot access it. <a href='/urls'>Go back</a></p>`);
+  } else {
+    const longURL = urlDatabase[id].longURL
+  
+    console.log(longURL)
+  
+    let templateVars = {
+      id,
+      longURL,
+      user: currentUser
+    };
+  
+    res.render('urls_show', templateVars);
+  }
 });
 
 //page to register an account for tinyURL
@@ -245,6 +236,7 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   urlDatabase[id] = req.body.newLongURL;
+  console.log(urlDatabase)
 
   res.redirect('/urls');
 });
