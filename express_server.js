@@ -126,14 +126,18 @@ app.get("/urls/new", (req, res) => {
 app.get('/urls/:id',  (req, res) => {
   
   const currentUser = getUserById(req.cookies['user_id']);
-  console.log(currentUser)
+  //console.log(currentUser)
 
   //not a problem when coming from the new url creator
   //is  not a problem when coming from the edit button or from redirect link in /urls:id page
   //is a problem when accessign directly (due to www.?)
   const id = req.params.id;
-
-  if (!currentUser) { 
+  
+  if(!urlDatabase[id]) {
+    res.send(`<h3>error</h3>
+    <p>That id does not exist <a href='/urls'>Go Back</a></p>`)
+  
+  } else if (!currentUser) { 
     res.send(`<h3>Error:</h3>
     <p>you must be logged in to see this page. Login <a href='/login'>here</a></p>`);
   } else  if (currentUser.userID !== urlDatabase[id].userID) {
@@ -142,7 +146,7 @@ app.get('/urls/:id',  (req, res) => {
   } else {
     const longURL = urlDatabase[id].longURL
   
-    console.log(longURL)
+    //console.log(longURL)
   
     let templateVars = {
       id,
@@ -160,13 +164,10 @@ app.get('/register', (req, res) => {
 
   if(currentUser) {
     res.redirect('/urls');
-    res.end()
+  } else {
+    const templateVars = {user: currentUser};
+    res.render('register', templateVars);
   }
-
-  const templateVars = {user: currentUser};
-  res.render('register', templateVars);
-  
-
 });
 
 //page to login to tinyURL account
@@ -220,25 +221,44 @@ app.post('/urls', (req, res) => {
   urlDatabase[id] = {
     id, longURL,
     userID: currentUser.userID};
-  //console.log(urlDatabase)
+  console.log("urlDatabase: ", urlDatabase)
+  console.log('currentUser: ', currentUser)
   res.redirect(`urls/${id}`);
 });
 
-//handle tinyURL delete form submissions
-app.post('/urls/:id/delete', (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
 
-  res.redirect('/urls');
-});
 
 //handle longUrl update forms
 app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  urlDatabase[id] = req.body.newLongURL;
-  console.log(urlDatabase)
 
-  res.redirect('/urls');
+  const id = req.params.id;
+  const currentUser = getUserById(req.cookies['user_id']);
+  console.log("id is:", id)
+  console.log('current user in /urls/:id post: ', currentUser)
+  console.log("urlDatabase in /urls/:id post: ", urlDatabase)
+  
+  if(!urlDatabase[id]) {
+    res.send(`<h3>error</h3>
+  <p>That id does not exist <a href='/urls'>Go Back</a></p>`)
+
+  } else if (!currentUser) {
+    res.send(`<h3>error</h3>
+  <p>You must be logged in to edit a tinyUrl. <a href='/urls'>Login</a></p>`)
+  
+  } else if(currentUser.userID !== urlDatabase[id].userID) {
+    res.send(`<h3>Error:</h3>
+    <p>You are not the owner of this url, so you cannot edit it. <a href='/urls'>Go back</a></p>`);
+  
+  } else {
+    urlDatabase[id] = {
+      id, 
+      longURL: req.body.newLongURL,
+      userID: currentUser.userID
+    };
+    console.log("urlDatabase after change: ", urlDatabase)
+
+    res.redirect('/urls');
+  }
 });
 
 //handle login form submissions
@@ -260,6 +280,32 @@ app.post('/login', (req, res) => {
     res.cookie('user_id', user.userID);
     res.redirect("/urls");
   }
+});
+
+//handle tinyURL delete form submissions
+app.post('/urls/:id/delete', (req, res) => {
+
+  const id = req.params.id
+  const currentUser = getUserById(req.cookies['user_id']);
+  console.log(currentUser)
+  
+  if(!urlDatabase[id]) {
+    res.send(`<h3>error</h3>
+  <p>That id does not exist <a href='/urls'>Go Back</a></p>`)
+
+  } else if (!currentUser) {
+    res.send(`<h3>error</h3>
+  <p>You must be logged in to delete a tinyUrl. <a href='/urls'>Login</a></p>`)
+  
+  } else if(currentUser.userID !== urlDatabase[id].userID) {
+    res.send(`<h3>Error:</h3>
+    <p>You are not the owner of this url, so you cannot delete it. <a href='/urls'>Go back</a></p>`);
+  
+  } else {
+    delete urlDatabase[id]
+    res.redirect('/urls');
+  }
+
 });
 
 //handle logout request
