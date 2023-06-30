@@ -18,9 +18,16 @@ app.use(cookieParser());
 
 //tiny urls
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
+
 
 //users
 const users = {};
@@ -59,6 +66,19 @@ const generateRandomString = () => {
   return result.join('');
 };
 
+const urlsForUser = (id) => {
+  let userUrls = {};
+  console.log(id)
+  for (const url in urlDatabase) {
+    console.log(url, urlDatabase[url].userID, id)
+    if (urlDatabase[url].userID === id) {
+      userUrls.userID = url;
+    }
+  }
+  console.log(userUrls, "in user urls func")
+  return userUrls;
+}
+
 /*----------------------------------------------*/
 
 // //set homepage to say hello
@@ -77,14 +97,21 @@ const generateRandomString = () => {
 
 //pages shows index of current urls in database
 app.get('/urls', (req, res) => {
-
+  
   const currentUser = getUserById(req.cookies['user_id']);
+
+  if (!currentUser) { 
+    res.send(`<h3>Error:</h3>
+    <p>you must be logged in to see this page. Login <a href='http://localhost:8080/login'>here</a></p>`);
+    res.end()
+  }
 
   let templateVars = {
     user: currentUser,
-    urls: urlDatabase,
+    urls: urlsForUser(currentUser.userID)
   };
 
+  console.log(templateVars.urls, "get user urls")
   res.render("urls_index", templateVars);
 });
 
@@ -95,10 +122,11 @@ app.get("/urls/new", (req, res) => {
 
   if (!currentUser) {
     res.redirect('/login');
-  } else {
-    let templateVars = { user: currentUser };
-    res.render("urls_new", templateVars);
+    res.end()
   }
+  let templateVars = { user: currentUser };
+  res.render("urls_new", templateVars);
+
   
 });
 
@@ -107,11 +135,24 @@ app.get("/urls/new", (req, res) => {
 app.get('/urls/:id',  (req, res) => {
 
   const currentUser = getUserById(req.cookies['user_id']);
+  console.log(currentUser)
+
+  // if (!currentUser) { 
+  //   res.send(`<h3>Error:</h3>
+  //   <p>you must be logged in to see this page. Login <a href='http://localhost:8080/login'>here</a></p>`);
+  //   res.end()
+  // }
+
   const id = req.params.id;
+
+  // if(currentUser.userID !== urlDatabase[id].userID) {
+  //   res.send(`<h3>Error:</h3>
+  //   <p>You are not the owner of this url, so you cannot access it.</p>`);
+  //   res.end()
+  // }
 
   let templateVars = {
     id,
-    longURL: urlDatabase[id],
     user: currentUser
   };
 
@@ -168,7 +209,9 @@ app.get('/u/:id', (req, res) => {
 //handle new short url request
 app.post('/urls', (req, res) => {
   //check if logged in
-  if (!getUserById(req.cookies['user_id'])) {
+  const currentUser = getUserById(req.cookies['user_id'])
+
+  if (!currentUser) {
     res.send(`<h3>error</h3>
   <p>You must be logged in to create a new tinyUrl</p>`)
     res.end();
@@ -179,8 +222,10 @@ app.post('/urls', (req, res) => {
   const id = generateRandomString();
 
   //store in database
-  urlDatabase[id] = longURL;
-  
+  urlDatabase[id] = {
+    id, longURL,
+    userID: currentUser.userID};
+  console.log(urlDatabase)
   res.redirect(`urls/${id}`);
 });
 
@@ -216,7 +261,7 @@ app.post('/login', (req, res) => {
   } else {
     //all good.
     //set user id cookie and redirect to urls
-    res.cookie('user_id', user.id);
+    res.cookie('user_id', user.userID);
     res.redirect("/urls");
   }
 });
@@ -235,22 +280,27 @@ app.post('/register', (req, res) => {
   if (email === '' || password === '') {
     res.statusCode = 400;
     res.send("Error: either email or password field are empty");
-  } else if (getUserByEmail(email)) {
+    res.end()
+  }
+  if (getUserByEmail(email)) {
     res.statusCode = 400;
     res.send("Error: this email is already registered");
-  } else {
-    const id = generateRandomString();
-
-    //update user database
-    users[id] = {
-      email,
-      password,
-      id
-    };
-  
-    res.cookie('user_id', id);
-    res.redirect("/urls");
+    res.end()
   }
+
+  const userID = generateRandomString();
+  console.log(userID)
+
+  //update user database
+  users[userID] = {
+    email,
+    password,
+    userID
+  };
+
+  res.cookie('user_id', userID);
+  res.redirect("/urls");
+  
 });
 /*----------------------------------------------*/
 
