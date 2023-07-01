@@ -1,14 +1,22 @@
 //setup server
 /*----------------------------------------------*/
 
+const bcrypt = require('bcryptjs');
 const express = require('express');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 /*----------------------------------------------*/
 
@@ -68,7 +76,7 @@ const urlsForUser = (userID) => {
 
   
   return userUrls;
-}
+};
 
 /*----------------------------------------------*/
 
@@ -89,9 +97,9 @@ const urlsForUser = (userID) => {
 //pages shows index of current urls in database
 app.get('/urls', (req, res) => {
   
-  const currentUser = getUserById(req.cookies['user_id']);
+  const currentUser = getUserById(req.session.user_id);
 
-  if (!currentUser) { 
+  if (!currentUser) {
     res.send(`<h3>Error:</h3>
     <p>you must be logged in to see this page. Login <a href='http://localhost:8080/login'>here</a></p>`);
   } else {
@@ -109,11 +117,11 @@ app.get('/urls', (req, res) => {
 //page with form to create new tinyURL
 app.get("/urls/new", (req, res) => {
 
-  const currentUser = getUserById(req.cookies['user_id']);
+  const currentUser = getUserById(req.session.user_id);
 
   if (!currentUser) {
     res.redirect('/login');
-    res.end()
+    res.end();
   }
   let templateVars = { user: currentUser };
   res.render("urls_new", templateVars);
@@ -125,7 +133,7 @@ app.get("/urls/new", (req, res) => {
 //page to access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
   
-  const currentUser = getUserById(req.cookies['user_id']);
+  const currentUser = getUserById(req.session.user_id);
   //console.log(currentUser)
 
   //not a problem when coming from the new url creator
@@ -133,18 +141,18 @@ app.get('/urls/:id',  (req, res) => {
   //is a problem when accessign directly (due to www.?)
   const id = req.params.id;
   
-  if(!urlDatabase[id]) {
+  if (!urlDatabase[id]) {
     res.send(`<h3>error</h3>
-    <p>That id does not exist <a href='/urls'>Go Back</a></p>`)
+    <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
   
-  } else if (!currentUser) { 
+  } else if (!currentUser) {
     res.send(`<h3>Error:</h3>
     <p>you must be logged in to see this page. Login <a href='/login'>here</a></p>`);
   } else  if (currentUser.userID !== urlDatabase[id].userID) {
     res.send(`<h3>Error:</h3>
     <p>You are not the owner of this url, so you cannot access it. <a href='/urls'>Go back</a></p>`);
   } else {
-    const longURL = urlDatabase[id].longURL
+    const longURL = urlDatabase[id].longURL;
   
     //console.log(longURL)
   
@@ -160,9 +168,9 @@ app.get('/urls/:id',  (req, res) => {
 
 //page to register an account for tinyURL
 app.get('/register', (req, res) => {
-  const currentUser = getUserById(req.cookies['user_id']);
+  const currentUser = getUserById(req.session.user_id);
 
-  if(currentUser) {
+  if (currentUser) {
     res.redirect('/urls');
   } else {
     const templateVars = {user: currentUser};
@@ -172,7 +180,7 @@ app.get('/register', (req, res) => {
 
 //page to login to tinyURL account
 app.get('/login', (req, res) => {
-  const currentUser = getUserById(req.cookies['user_id'])
+  const currentUser = getUserById(req.session.user_id);
 
   if (currentUser) {
     res.redirect('/urls');
@@ -189,9 +197,9 @@ app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
 
   //check longURL exists in database
-  if(!longURL) {
+  if (!longURL) {
     res.send(`<h3>error</h3>
-  <p>This tinyURL does not exist</p>`)
+  <p>This tinyURL does not exist</p>`);
     res.end();
   }
   res.redirect(longURL);
@@ -205,11 +213,11 @@ app.get('/u/:id', (req, res) => {
 //handle new short url request
 app.post('/urls', (req, res) => {
   //check if logged in
-  const currentUser = getUserById(req.cookies['user_id'])
+  const currentUser = getUserById(req.session.user_id);
 
   if (!currentUser) {
     res.send(`<h3>error</h3>
-  <p>You must be logged in to create a new tinyUrl</p>`)
+  <p>You must be logged in to create a new tinyUrl</p>`);
     res.end();
   }
 
@@ -221,8 +229,8 @@ app.post('/urls', (req, res) => {
   urlDatabase[id] = {
     id, longURL,
     userID: currentUser.userID};
-  console.log("urlDatabase: ", urlDatabase)
-  console.log('currentUser: ', currentUser)
+  console.log("urlDatabase: ", urlDatabase);
+  console.log('currentUser: ', currentUser);
   res.redirect(`urls/${id}`);
 });
 
@@ -230,32 +238,35 @@ app.post('/urls', (req, res) => {
 
 //handle longUrl update forms
 app.post('/urls/:id', (req, res) => {
-
+  //post to path works when logged in
+  //post to path says login when not
+  //post to path says not ur cookie!
+  //says id does not exist if thats the case
   const id = req.params.id;
-  const currentUser = getUserById(req.cookies['user_id']);
-  console.log("id is:", id)
-  console.log('current user in /urls/:id post: ', currentUser)
-  console.log("urlDatabase in /urls/:id post: ", urlDatabase)
+  const currentUser = getUserById(req.session.user_id);
+  console.log("id is:", id);
+  console.log('current user in /urls/:id post: ', currentUser);
+  console.log("urlDatabase in /urls/:id post: ", urlDatabase);
   
-  if(!urlDatabase[id]) {
+  if (!urlDatabase[id]) {
     res.send(`<h3>error</h3>
-  <p>That id does not exist <a href='/urls'>Go Back</a></p>`)
+  <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
 
   } else if (!currentUser) {
     res.send(`<h3>error</h3>
-  <p>You must be logged in to edit a tinyUrl. <a href='/urls'>Login</a></p>`)
+  <p>You must be logged in to edit a tinyUrl. <a href='/urls'>Login</a></p>`);
   
-  } else if(currentUser.userID !== urlDatabase[id].userID) {
+  } else if (currentUser.userID !== urlDatabase[id].userID) {
     res.send(`<h3>Error:</h3>
     <p>You are not the owner of this url, so you cannot edit it. <a href='/urls'>Go back</a></p>`);
   
   } else {
     urlDatabase[id] = {
-      id, 
+      id,
       longURL: req.body.newLongURL,
       userID: currentUser.userID
     };
-    console.log("urlDatabase after change: ", urlDatabase)
+    console.log("urlDatabase after change: ", urlDatabase);
 
     res.redirect('/urls');
   }
@@ -271,38 +282,42 @@ app.post('/login', (req, res) => {
   if (!user) {
     res.statusCode = 403;
     res.send("Error: User email not found");
-  } else if (password !== user.password) {
+
+  } else if (!bcrypt.compareSync(password, user.encPassword)) {
     res.statusCode = 403;
     res.send("Error: Incorrect Password");
+
   } else {
     //all good.
     //set user id cookie and redirect to urls
-    res.cookie('user_id', user.userID);
+    req.session.user_id = user.userID;
     res.redirect("/urls");
   }
 });
 
 //handle tinyURL delete form submissions
 app.post('/urls/:id/delete', (req, res) => {
-
-  const id = req.params.id
-  const currentUser = getUserById(req.cookies['user_id']);
-  console.log(currentUser)
+// deletes if correct user logged in
+// says wrong owner if not logged in to right acc.
+// says login if not so
+  const id = req.params.id;
+  const currentUser = getUserById(req.session.user_id);
+  console.log(currentUser);
   
-  if(!urlDatabase[id]) {
+  if (!urlDatabase[id]) {
     res.send(`<h3>error</h3>
-  <p>That id does not exist <a href='/urls'>Go Back</a></p>`)
+  <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
 
   } else if (!currentUser) {
     res.send(`<h3>error</h3>
-  <p>You must be logged in to delete a tinyUrl. <a href='/urls'>Login</a></p>`)
+  <p>You must be logged in to delete a tinyUrl. <a href='/urls'>Login</a></p>`);
   
-  } else if(currentUser.userID !== urlDatabase[id].userID) {
+  } else if (currentUser.userID !== urlDatabase[id].userID) {
     res.send(`<h3>Error:</h3>
     <p>You are not the owner of this url, so you cannot delete it. <a href='/urls'>Go back</a></p>`);
   
   } else {
-    delete urlDatabase[id]
+    delete urlDatabase[id];
     res.redirect('/urls');
   }
 
@@ -310,7 +325,7 @@ app.post('/urls/:id/delete', (req, res) => {
 
 //handle logout request
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect("/login");
 });
 
@@ -322,27 +337,27 @@ app.post('/register', (req, res) => {
   if (email === '' || password === '') {
     res.statusCode = 400;
     res.send("Error: either email or password field are empty");
-    res.end()
-  }
-  if (getUserByEmail(email)) {
+
+  } else if (getUserByEmail(email)) {
     res.statusCode = 400;
     res.send("Error: this email is already registered");
-    res.end()
-  }
+    
+  } else {
 
-  const userID = generateRandomString();
-  //console.log(userID)
+    const encPassword = bcrypt.hashSync(password, 10);
+    const userID = generateRandomString();
 
-  //update user database
-  users[userID] = {
-    email,
-    password,
-    userID
-  };
-
-  res.cookie('user_id', userID);
-  res.redirect("/urls");
+    //update user database
+    users[userID] = {
+      email,
+      encPassword,
+      userID
+    };
   
+    req.session.user_id = userID;
+    res.redirect("/urls");
+  }
+    
 });
 /*----------------------------------------------*/
 
