@@ -1,6 +1,6 @@
 //setup server
 /*----------------------------------------------*/
-
+const { getUserByEmail } = require('./helpers.js')
 const bcrypt = require('bcryptjs');
 const express = require('express');
 const cookieSession = require('cookie-session');
@@ -36,18 +36,11 @@ const users = {};
 //helper functions
 /*----------------------------------------------*/
 
-//takes in email, returns user associated with email, or undefined if no such user exists
-const getUserByEmail = (email) => {
-  for (const id in users) {
-    if (users[id].email === email) {
-      return users[id];
-    }
-  }
-};
+
 
 //takes in user id, returns user associated with id, or undefined if no such user exits
-const getUserById = (id) => {
-  return users[id];
+const getUserById = (id, database) => {
+  return database[id];
 };
 
 //returns a randomly generated 6-character alphanumeric string
@@ -97,7 +90,7 @@ const urlsForUser = (userID) => {
 //pages shows index of current urls in database
 app.get('/urls', (req, res) => {
   
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
     res.send(`<h3>Error:</h3>
@@ -117,7 +110,7 @@ app.get('/urls', (req, res) => {
 //page with form to create new tinyURL
 app.get("/urls/new", (req, res) => {
 
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
     res.redirect('/login');
@@ -133,7 +126,7 @@ app.get("/urls/new", (req, res) => {
 //page to access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
   
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
   //console.log(currentUser)
 
   //not a problem when coming from the new url creator
@@ -168,7 +161,7 @@ app.get('/urls/:id',  (req, res) => {
 
 //page to register an account for tinyURL
 app.get('/register', (req, res) => {
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
 
   if (currentUser) {
     res.redirect('/urls');
@@ -180,7 +173,7 @@ app.get('/register', (req, res) => {
 
 //page to login to tinyURL account
 app.get('/login', (req, res) => {
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
 
   if (currentUser) {
     res.redirect('/urls');
@@ -213,7 +206,7 @@ app.get('/u/:id', (req, res) => {
 //handle new short url request
 app.post('/urls', (req, res) => {
   //check if logged in
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
     res.send(`<h3>error</h3>
@@ -243,7 +236,7 @@ app.post('/urls/:id', (req, res) => {
   //post to path says not ur cookie!
   //says id does not exist if thats the case
   const id = req.params.id;
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
   console.log("id is:", id);
   console.log('current user in /urls/:id post: ', currentUser);
   console.log("urlDatabase in /urls/:id post: ", urlDatabase);
@@ -276,7 +269,7 @@ app.post('/urls/:id', (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
 
   //check email/password valid
   if (!user) {
@@ -301,7 +294,7 @@ app.post('/urls/:id/delete', (req, res) => {
 // says wrong owner if not logged in to right acc.
 // says login if not so
   const id = req.params.id;
-  const currentUser = getUserById(req.session.user_id);
+  const currentUser = getUserById(req.session.user_id, users);
   console.log(currentUser);
   
   if (!urlDatabase[id]) {
@@ -338,7 +331,7 @@ app.post('/register', (req, res) => {
     res.statusCode = 400;
     res.send("Error: either email or password field are empty");
 
-  } else if (getUserByEmail(email)) {
+  } else if (getUserByEmail(email, users)) {
     res.statusCode = 400;
     res.send("Error: this email is already registered");
     
