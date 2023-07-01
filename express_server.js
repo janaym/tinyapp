@@ -1,6 +1,6 @@
 //setup server
 /*----------------------------------------------*/
-const { getUserByEmail } = require('./helpers.js')
+const { getUserByEmail, getUserById, urlsForUser, generateRandomString } = require('./helpers.js');
 const bcrypt = require('bcryptjs');
 const express = require('express');
 const cookieSession = require('cookie-session');
@@ -33,168 +33,120 @@ const users = {};
 /*----------------------------------------------*/
 
 
-//helper functions
-/*----------------------------------------------*/
-
-
-
-//takes in user id, returns user associated with id, or undefined if no such user exits
-const getUserById = (id, database) => {
-  return database[id];
-};
-
-//returns a randomly generated 6-character alphanumeric string
-const generateRandomString = () => {
-  // declare all alphanumeric characters
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  
-  let result = Array(6);
-  //populate array with random characters
-  for (let i = 0; i < 6; i++) {
-    result[i] = characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-
-  return result.join('');
-};
-
-const urlsForUser = (userID) => {
-  let userUrls = {};
-
-  for (const urlID in urlDatabase) {
-
-    if (urlDatabase[urlID].userID === userID) {
-      userUrls[urlID] = urlDatabase[urlID];
-    }
-  }
-
-  
-  return userUrls;
-};
-
-/*----------------------------------------------*/
-
-// //set homepage to say hello
-// app.get("/", (req, res) => {
-//   res.send("Hello");
-// });
-
-// //access url info in JSON format
-// app.get('/urls.json', (req, res) => {
-//   res.json(urlDatabase);
-// });
-
 
 //Get Routes
 /*----------------------------------------------*/
 
 //pages shows index of current urls in database
 app.get('/urls', (req, res) => {
-  
   const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
-    res.send(`<h3>Error:</h3>
-    <p>you must be logged in to see this page. Login <a href='http://localhost:8080/login'>here</a></p>`);
-  } else {
-    let templateVars = {
-      user: currentUser,
-      urls: urlsForUser(currentUser.userID)
-    };
-    // console.log(templateVars.urls, "get user urls")
-    res.render("urls_index", templateVars);
+    req.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+    <p>You must login to see this page. <a href='http://localhost:8080/login'>Login</a></p>`);
+    return;
   }
 
-
+  let templateVars = {
+    user: currentUser,
+    urls: urlsForUser(currentUser.userID, urlDatabase)
+  };
+  
+  res.render("urls_index", templateVars);
 });
 
 //page with form to create new tinyURL
 app.get("/urls/new", (req, res) => {
-
   const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
     res.redirect('/login');
-    res.end();
+    return;
   }
+
   let templateVars = { user: currentUser };
   res.render("urls_new", templateVars);
-
-  
 });
 
 
 //page to access the info for a specific short url id
 app.get('/urls/:id',  (req, res) => {
-  
   const currentUser = getUserById(req.session.user_id, users);
-  //console.log(currentUser)
-
-  //not a problem when coming from the new url creator
-  //is  not a problem when coming from the edit button or from redirect link in /urls:id page
-  //is a problem when accessign directly (due to www.?)
   const id = req.params.id;
   
   if (!urlDatabase[id]) {
-    res.send(`<h3>error</h3>
-    <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
-  
-  } else if (!currentUser) {
-    res.send(`<h3>Error:</h3>
-    <p>you must be logged in to see this page. Login <a href='/login'>here</a></p>`);
-  } else  if (currentUser.userID !== urlDatabase[id].userID) {
-    res.send(`<h3>Error:</h3>
-    <p>You are not the owner of this url, so you cannot access it. <a href='/urls'>Go back</a></p>`);
-  } else {
-    const longURL = urlDatabase[id].longURL;
-  
-    //console.log(longURL)
-  
-    let templateVars = {
-      id,
-      longURL,
-      user: currentUser
-    };
-  
-    res.render('urls_show', templateVars);
+    res.statusCode = 404;
+    res.send(`<h3>Error 404 - Not Found:</h3>
+    <p>That id does not exist in our records. <a href='/urls'>Go Back</a></p>`);
+    return;
   }
+
+  if (!currentUser) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+    <p>You must login to see this page. <a href='/login'>Login</a></p>`);
+    return;
+  }
+  
+  if (currentUser.userID !== urlDatabase[id].userID) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+    <p>You are not the owner of this url, so you cannot access it. <a href='/urls'>Go back</a></p>`);
+    return;
+  }
+  
+  const longURL = urlDatabase[id].longURL;
+
+  let templateVars = {
+    id,
+    longURL,
+    user: currentUser
+  };
+
+  res.render('urls_show', templateVars);
 });
 
 //page to register an account for tinyURL
 app.get('/register', (req, res) => {
   const currentUser = getUserById(req.session.user_id, users);
 
+  //if already logged in:
   if (currentUser) {
     res.redirect('/urls');
-  } else {
-    const templateVars = {user: currentUser};
-    res.render('register', templateVars);
+    return;
   }
+
+  const templateVars = {user: currentUser};
+  res.render('register', templateVars);
 });
 
 //page to login to tinyURL account
 app.get('/login', (req, res) => {
   const currentUser = getUserById(req.session.user_id, users);
 
+  //if already logged in:
   if (currentUser) {
     res.redirect('/urls');
-    res.end();
+    return;
   }
 
   const templateVars = { user: currentUser };
   res.render('login', templateVars);
-  
 });
 
 //redirect /u/:id paths to their respective long id
 app.get('/u/:id', (req, res) => {
+  //check longURL exists in database
   const longURL = urlDatabase[req.params.id];
 
-  //check longURL exists in database
   if (!longURL) {
-    res.send(`<h3>error</h3>
+    res.statusCode = 404;
+    res.send(`<h3>Error 404 - Not Found</h3>
   <p>This tinyURL does not exist</p>`);
-    res.end();
+    return;
   }
+
   res.redirect(longURL);
 });
 
@@ -205,13 +157,13 @@ app.get('/u/:id', (req, res) => {
 
 //handle new short url request
 app.post('/urls', (req, res) => {
-  //check if logged in
   const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
-    res.send(`<h3>error</h3>
-  <p>You must be logged in to create a new tinyUrl</p>`);
-    res.end();
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+  <p>You must be logged in to create a new tinyUrl. <a href='http://localhost:8080/login'>Login</a></p>`);
+    return;
   }
 
   //create id: longURL pair
@@ -221,9 +173,9 @@ app.post('/urls', (req, res) => {
   //store in database
   urlDatabase[id] = {
     id, longURL,
-    userID: currentUser.userID};
-  console.log("urlDatabase: ", urlDatabase);
-  console.log('currentUser: ', currentUser);
+    userID: currentUser.userID
+  };
+
   res.redirect(`urls/${id}`);
 });
 
@@ -231,38 +183,37 @@ app.post('/urls', (req, res) => {
 
 //handle longUrl update forms
 app.post('/urls/:id', (req, res) => {
-  //post to path works when logged in
-  //post to path says login when not
-  //post to path says not ur cookie!
-  //says id does not exist if thats the case
   const id = req.params.id;
   const currentUser = getUserById(req.session.user_id, users);
-  console.log("id is:", id);
-  console.log('current user in /urls/:id post: ', currentUser);
-  console.log("urlDatabase in /urls/:id post: ", urlDatabase);
   
   if (!urlDatabase[id]) {
-    res.send(`<h3>error</h3>
+    res.statusCode = 404;
+    res.send(`<h3>Error 404 - Not Found:</h3>
   <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
-
-  } else if (!currentUser) {
-    res.send(`<h3>error</h3>
-  <p>You must be logged in to edit a tinyUrl. <a href='/urls'>Login</a></p>`);
-  
-  } else if (currentUser.userID !== urlDatabase[id].userID) {
-    res.send(`<h3>Error:</h3>
-    <p>You are not the owner of this url, so you cannot edit it. <a href='/urls'>Go back</a></p>`);
-  
-  } else {
-    urlDatabase[id] = {
-      id,
-      longURL: req.body.newLongURL,
-      userID: currentUser.userID
-    };
-    console.log("urlDatabase after change: ", urlDatabase);
-
-    res.redirect('/urls');
+    return;
   }
+
+  if (!currentUser) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+  <p>You must be logged in to edit a tinyUrl. <a href='/urls'>Login</a></p>`);
+    return;
+  }
+  
+  if (currentUser.userID !== urlDatabase[id].userID) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+    <p>You are not the owner of this url, so you cannot edit it. <a href='/urls'>Go back</a></p>`);
+    return;
+  }
+
+  urlDatabase[id] = {
+    id,
+    longURL: req.body.newLongURL,
+    userID: currentUser.userID
+  };
+  
+  res.redirect('/urls');
 });
 
 //handle login form submissions
@@ -271,49 +222,55 @@ app.post('/login', (req, res) => {
   const password = req.body.password;
   const user = getUserByEmail(email, users);
 
-  //check email/password valid
   if (!user) {
-    res.statusCode = 403;
-    res.send("Error: User email not found");
-
-  } else if (!bcrypt.compareSync(password, user.encPassword)) {
-    res.statusCode = 403;
-    res.send("Error: Incorrect Password");
-
-  } else {
-    //all good.
-    //set user id cookie and redirect to urls
-    req.session.user_id = user.userID;
-    res.redirect("/urls");
+    res.statusCode = 404;
+    res.send(`<h3>Error 404 - Not Found:</h3>
+  <p>Email not associated with a TinyApp account. <a href='/login'>Try Again</a></p>`);
+    return;
   }
+  
+  if (!bcrypt.compareSync(password, user.encPassword)) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+  <p>Incorrect password. <a href='/login'>Try Again</a></p>`);
+    return;
+  }
+
+  //all good.
+  //set user id cookie and redirect to urls
+  req.session.user_id = user.userID;
+  res.redirect("/urls");
 });
 
 //handle tinyURL delete form submissions
 app.post('/urls/:id/delete', (req, res) => {
-// deletes if correct user logged in
-// says wrong owner if not logged in to right acc.
-// says login if not so
   const id = req.params.id;
   const currentUser = getUserById(req.session.user_id, users);
   console.log(currentUser);
   
   if (!urlDatabase[id]) {
-    res.send(`<h3>error</h3>
+    res.statusCode = 404;
+    res.send(`<h3>Error 404 - Not Found:</h3>
   <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
-
-  } else if (!currentUser) {
-    res.send(`<h3>error</h3>
-  <p>You must be logged in to delete a tinyUrl. <a href='/urls'>Login</a></p>`);
+    return;
+  }
   
-  } else if (currentUser.userID !== urlDatabase[id].userID) {
-    res.send(`<h3>Error:</h3>
+  if (!currentUser) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
+  <p>You must be logged in to delete a tinyUrl. <a href='/urls'>Login</a></p>`);
+    return;
+  }
+  
+  if (currentUser.userID !== urlDatabase[id].userID) {
+    res.statusCode = 403;
+    res.send(`<h3>Error 403 - Forbidden:</h3>
     <p>You are not the owner of this url, so you cannot delete it. <a href='/urls'>Go back</a></p>`);
   
-  } else {
-    delete urlDatabase[id];
-    res.redirect('/urls');
   }
 
+  delete urlDatabase[id];
+  res.redirect('/urls');
 });
 
 //handle logout request
@@ -329,31 +286,35 @@ app.post('/register', (req, res) => {
 
   if (email === '' || password === '') {
     res.statusCode = 400;
-    res.send("Error: either email or password field are empty");
-
-  } else if (getUserByEmail(email, users)) {
-    res.statusCode = 400;
-    res.send("Error: this email is already registered");
-    
-  } else {
-
-    const encPassword = bcrypt.hashSync(password, 10);
-    const userID = generateRandomString();
-
-    //update user database
-    users[userID] = {
-      email,
-      encPassword,
-      userID
-    };
-  
-    req.session.user_id = userID;
-    res.redirect("/urls");
+    res.send(`<h3>Error 400 - Bad Response:</h3>
+    <p>Email or Password field left incomplete. <a href='/register'>Try Again</a></p>`);
+    return;
   }
-    
+  
+  if (getUserByEmail(email, users)) {
+    res.statusCode = 400;
+    res.send(`<h3>Error 400 - Bad Response:</h3>
+    <p>Email already associated with account. <a href='/register'>Try Again</a></p>`);
+    return;
+  }
+
+  const encPassword = bcrypt.hashSync(password, 10);
+  const userID = generateRandomString();
+
+  //update user database
+  users[userID] = {
+    email,
+    encPassword,
+    userID
+  };
+
+  req.session.user_id = userID;
+  res.redirect("/urls");
 });
+
 /*----------------------------------------------*/
 
+//initialize server
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
