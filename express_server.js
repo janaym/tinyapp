@@ -1,6 +1,6 @@
 //setup server
 /*----------------------------------------------*/
-const { getUserByEmail, getUserById, urlsForUser, generateRandomString } = require('./helpers.js');
+const { getUserByEmail, getUserById, urlsForUser, generateRandomString } = require('./helpers.js')
 const bcrypt = require('bcryptjs');
 const express = require('express');
 const cookieSession = require('cookie-session');
@@ -42,11 +42,11 @@ app.get('/urls', (req, res) => {
   const currentUser = getUserById(req.session.user_id, users);
 
   if (!currentUser) {
-    req.statusCode = 403;
+    req.statusCode = 403
     res.send(`<h3>Error 403 - Forbidden:</h3>
     <p>You must login to see this page. <a href='http://localhost:8080/login'>Login</a></p>`);
     return;
-  }
+  } 
 
   let templateVars = {
     user: currentUser,
@@ -87,14 +87,14 @@ app.get('/urls/:id',  (req, res) => {
     res.send(`<h3>Error 403 - Forbidden:</h3>
     <p>You must login to see this page. <a href='/login'>Login</a></p>`);
     return;
-  }
+  } 
   
   if (currentUser.userID !== urlDatabase[id].userID) {
     res.statusCode = 403;
     res.send(`<h3>Error 403 - Forbidden:</h3>
     <p>You are not the owner of this url, so you cannot access it. <a href='/urls'>Go back</a></p>`);
     return;
-  }
+  } 
   
   const longURL = urlDatabase[id].longURL;
 
@@ -135,19 +135,21 @@ app.get('/login', (req, res) => {
   res.render('login', templateVars);
 });
 
+
 //redirect /u/:id paths to their respective long id
 app.get('/u/:id', (req, res) => {
   //check longURL exists in database
-  const longURL = urlDatabase[req.params.id];
+  const ident = req.params.id;
+  const longURL = urlDatabase[ident].longURL;
 
   if (!longURL) {
     res.statusCode = 404;
     res.send(`<h3>Error 404 - Not Found</h3>
   <p>This tinyURL does not exist</p>`);
-    return;
-  }
 
+  } else {
   res.redirect(longURL);
+  }
 });
 
 /*----------------------------------------------*/
@@ -191,7 +193,7 @@ app.post('/urls/:id', (req, res) => {
     res.send(`<h3>Error 404 - Not Found:</h3>
   <p>That id does not exist <a href='/urls'>Go Back</a></p>`);
     return;
-  }
+  } 
 
   if (!currentUser) {
     res.statusCode = 403;
@@ -227,13 +229,13 @@ app.post('/login', (req, res) => {
     res.send(`<h3>Error 404 - Not Found:</h3>
   <p>Email not associated with a TinyApp account. <a href='/login'>Try Again</a></p>`);
     return;
-  }
+  } 
   
   if (!bcrypt.compareSync(password, user.encPassword)) {
     res.statusCode = 403;
     res.send(`<h3>Error 403 - Forbidden:</h3>
   <p>Incorrect password. <a href='/login'>Try Again</a></p>`);
-    return;
+    return;  
   }
 
   //all good.
@@ -296,7 +298,7 @@ app.post('/register', (req, res) => {
     res.send(`<h3>Error 400 - Bad Response:</h3>
     <p>Email already associated with account. <a href='/register'>Try Again</a></p>`);
     return;
-  }
+  } 
 
   const encPassword = bcrypt.hashSync(password, 10);
   const userID = generateRandomString();
@@ -314,7 +316,6 @@ app.post('/register', (req, res) => {
 
 /*----------------------------------------------*/
 
-//initialize server
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
