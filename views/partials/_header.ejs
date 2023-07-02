@@ -18,15 +18,15 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <button class="btn btn-outline-light" onclick="window.location ='http://localhost:8080/register';">Register</button>
     <% if (!user) { %>
       <div class="navbar-dark" >
+        <button class="btn btn-outline-light" onclick="window.location ='http://localhost:8080/register';">Register</button>
         <button class ="btn btn-outline-light" onclick="window.location ='http://localhost:8080/login';">Login</button>
       </div>
     <% } else { %>
       <form class = "form-inline" method="post" action="/logout">
-        <button type="submit" class="btn btn-outline-light" name="logout">Logout</button>
         <label for="logout" class="text-light">Logged in as: <%= user.email %> </label>
+        <button type="submit" class="btn btn-outline-light" name="logout">Logout</button>
       </form>
     <% } %>
    
