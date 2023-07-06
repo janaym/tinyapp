@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-const { getUserByEmail } = require('../helpers.js')
+const { getUserByEmail, isValidUrl } = require('../helpers.js')
 
 const testUsers = {
   "userRandomID": {
@@ -25,4 +25,13 @@ describe("getUserByEmail", () => {
     assert.isUndefined(user);
   })
   
+})
+
+describe("isValidUrl", () => {
+  it("should return true if the string is a valid url", () => {
+    assert.equal(true, isValidUrl('http://www.google.com'));
+  })
+  it("should return false if the url is in valid", () => {
+    assert.equal(false, isValidUrl("not a url!!"));
+  }) 
 })

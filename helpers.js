@@ -38,9 +38,21 @@ const urlsForUser = (userID, urlDatabase) => {
   return userUrls;
 };
 
+const isValidUrl = (testUrl) => {
+  try {
+    new URL(testUrl);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+
+
 module.exports = { 
   getUserByEmail,
   getUserById,
   urlsForUser,
-  generateRandomString
+  generateRandomString,
+  isValidUrl
  };
