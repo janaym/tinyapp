@@ -35,7 +35,7 @@
           <tbody>
             <% for (let urlId in urls) { %>
               <tr>
-                <td><%= urlId %></td>
+                <td><a href="/u/<%= urlId %>"><%= urlId %></a></td>
                 <td><%= urls[urlId].longURL %></td>
                 <td><form method="POST" action="/urls/<%= urlId %>/delete">
                   <button type="submit" class="btn btn-outline-danger"> &#128465</button>
