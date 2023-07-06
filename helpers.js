@@ -45,14 +45,14 @@ const isValidUrl = (testUrl) => {
   } catch (err) {
     return false;
   }
-}
+};
 
 
 
-module.exports = { 
+module.exports = {
   getUserByEmail,
   getUserById,
   urlsForUser,
   generateRandomString,
   isValidUrl
- };
+};
