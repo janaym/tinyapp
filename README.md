@@ -31,3 +31,6 @@ TinyApp is a full stack web application built with Node and Express that allows 
 - To delete a URL, simply click its wastebasket button
 - To modify a URL, click the edit button. You will be taken to a page where you can change the Tiny URL's associated long URL
 
+## Using a Tiny URL
+- clicking on a short URL link in TinyApp will redirect the client to the short URL's respective long url. 
+
