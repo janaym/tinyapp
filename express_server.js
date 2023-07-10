@@ -40,7 +40,7 @@ const users = {};
 //pages shows index of current urls in database
 
 app.get('/', (req, res) => {
-  const currentUser = getUserById(req.session.user_id.users);
+  const currentUser = getUserById(req.session.user_id, users);
   
   //not logged in: redirect to login
   if (!currentUser) {
